@@ -8,6 +8,7 @@ const DATA_FILES = [
   "work-study", "technology", "hometown", "free-time", "travel",
   // Tech concepts (what / how / why / when)
   "bayes-theorem", "timer-wheel", "skip-list",
+  "quantitative", "algorithms", "data-structures", "math",
 ];
 
 // Each data file calls window.SPEAKUP_TOPICS.push({...})
@@ -43,6 +44,10 @@ const PALETTE = [
   { accent: "#c2410c", tint: "#fdeee4" },
   { accent: "#0e7490", tint: "#e2f4f8" },
   { accent: "#6d28d9", tint: "#efe8fd" },
+  { accent: "#15803d", tint: "#e6f6ea" },
+  { accent: "#b45309", tint: "#fdf3e1" },
+  { accent: "#be185d", tint: "#fde8f1" },
+  { accent: "#1d4ed8", tint: "#e6edfd" },
 ];
 const ALL_COLOR = { accent: "#141414", tint: "#f2f2ef" };
 
