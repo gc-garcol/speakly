@@ -10,6 +10,7 @@ const DATA_FILES = [
   "bayes-theorem", "timer-wheel", "skip-list",
   "quantitative", "algorithms", "data-structures", "math",
   "cache-strategies", "java-memory-model",
+  "matrices", "determinants", "matrix-rank",
 ];
 
 // Each data file calls window.SPEAKUP_TOPICS.push({...})
