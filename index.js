@@ -9,7 +9,7 @@ const DATA_FILES = [
   // Tech concepts (what / how / why / when)
   "bayes-theorem", "timer-wheel", "skip-list",
   "quantitative", "algorithms", "data-structures", "math",
-  "cache-strategies",
+  "cache-strategies", "java-memory-model",
 ];
 
 // Each data file calls window.SPEAKUP_TOPICS.push({...})
