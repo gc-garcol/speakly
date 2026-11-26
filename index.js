@@ -11,6 +11,7 @@ const DATA_FILES = [
   "quantitative", "algorithms", "data-structures", "math",
   "cache-strategies", "java-memory-model",
   "matrices", "determinants", "matrix-rank",
+  "expectation-variance",
 ];
 
 // Each data file calls window.SPEAKUP_TOPICS.push({...})
