@@ -100,6 +100,7 @@ window.SPEAKUP_TOPICS.push({
   - "Mark as practised" progress is saved in `localStorage` under `speakup.practised`.
   - The URL hash (`#<question-id>`) opens that question.
   - Keyboard shortcuts: `R`, `H`, `D`, `/`, `←`, `→`.
+  - Slow-network loading: the Google Fonts stylesheet loads without blocking the page (`media="print"` swap). Data files download in parallel (`async = false` keeps the `DATA_FILES` order). Until they load, the progress pill, tiles and card show static skeleton placeholders in `index.html`, and Search / Hint / Random stay disabled. If loading fails, a card appears with a "Try again" button.
 - Keep button labels short enough not to wrap on a 375px screen.
 
 ## 6. Code quality, accessibility, security

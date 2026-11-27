@@ -21,18 +21,25 @@ function loadScript(src) {
   return new Promise((resolve, reject) => {
     const s = document.createElement("script");
     s.src = src;
+    // async=false: download in parallel but execute in insertion order, so topics keep the order of DATA_FILES
+    s.async = false;
     s.onload = resolve;
     s.onerror = () => reject(new Error(`Could not load ${src}`));
     document.head.appendChild(s);
   });
 }
 
-// Load sequentially so topics keep the order of DATA_FILES
-DATA_FILES.reduce((p, name) => p.then(() => loadScript(`./data/${name}.js`)), Promise.resolve())
+Promise.all(DATA_FILES.map((name) => loadScript(`./data/${name}.js`)))
   .then(() => startApp(window.SPEAKUP_TOPICS))
   .catch((err) => {
-    document.getElementById("main").innerHTML =
-      `<div class="card empty"><div class="big" aria-hidden="true">⚠️</div><h2>Couldn't load questions</h2><p>${err.message}</p></div>`;
+    const main = document.getElementById("main");
+    main.innerHTML =
+      `<div class="card empty"><div class="big" aria-hidden="true">⚠️</div><h2>Couldn't load questions</h2>
+        <p>Check your connection and try again.</p>
+        <button class="btn btn-dark" id="btn-retry" style="margin-top:18px">Try again</button></div>`;
+    main.querySelector("#btn-retry").addEventListener("click", () => location.reload());
+    document.getElementById("app").removeAttribute("aria-busy");
+    console.error(err);
   });
 
 function startApp(TOPICS) {
@@ -512,6 +519,10 @@ document.addEventListener("keydown", (e) => {
 });
 
 // ---------- Init ----------
+// Buttons start disabled in index.html while the data loads
+els.randomBtn.disabled = false;
+els.searchBtn.disabled = false;
+$("#app").removeAttribute("aria-busy");
 renderProgress();
 renderTiles();
 renderParts();

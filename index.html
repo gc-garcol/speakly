@@ -7,7 +7,9 @@
   <title>Speak Up · IELTS Speaking Practice</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <!-- Non-blocking font: the page paints straight away with the fallback font, even on slow or no internet -->
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" media="print" onload="this.media='all'" />
+  <noscript><link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" /></noscript>
   <style>
     /* ---------- Tokens (Brilliant-inspired: white, bold ink, chunky 3D buttons) ---------- */
     :root {
@@ -254,6 +256,26 @@
     .results mark { background: #ffe58a; color: inherit; border-radius: 3px; padding: 0 1px; }
     .no-results { text-align: center; color: var(--muted); padding: 40px 0; font-weight: 600; }
 
+    /* ---------- Loading skeleton (static markup, replaced once the data files have loaded) ---------- */
+    .skel {
+      display: block; color: transparent; background: var(--line); border-radius: 8px;
+      animation: pulse 1.1s ease-in-out infinite alternate; user-select: none;
+    }
+    @keyframes pulse { to { opacity: .45; } }
+    .skel-inline { display: inline-block; width: 44px; border-radius: 999px; }
+    .tile-skel { --tile-tint: var(--soft); cursor: default; }
+    .tile-skel:hover { transform: none; }
+    .tile-skel .tile-name { display: flex; flex-direction: column; gap: 6px; }
+    .skel-line { height: .9em; width: 100%; }
+    .skel-line.short { width: 60%; }
+    .skel-card .card-hero { background: var(--soft); }
+    .skel-card .badges .skel { width: 64px; height: 26px; border-radius: 999px; }
+    .skel-card .question { display: flex; flex-direction: column; gap: 10px; }
+    .skel-card .question .skel { height: .8em; }
+    .skel-card .skel-btn { height: 48px; margin-top: 20px; border-radius: 16px; }
+    .skel-card .card-foot .skel { width: 52px; height: 40px; border-radius: 12px; }
+    .skel-card .card-foot .skel-inline { width: 48px; height: 1em; }
+
     .sr-only { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
   </style>
 </head>
@@ -261,17 +283,23 @@
   <header class="topbar">
     <div class="topbar-inner">
       <div class="logo"><span class="logo-mark" aria-hidden="true"><span></span></span>Speak Up</div>
-      <div class="progress-pill" id="progress-pill" aria-live="polite"></div>
+      <div class="progress-pill" id="progress-pill" aria-live="polite"><span class="skel skel-inline" aria-hidden="true">&nbsp;</span></div>
     </div>
   </header>
 
-  <div class="app">
+  <div class="app" id="app" aria-busy="true">
     <section class="intro">
       <h1>Practise IELTS Speaking, one question at a time.</h1>
     </section>
 
     <p class="section-label" id="topics-label">Topics</p>
-    <nav class="tiles" id="tiles" aria-labelledby="topics-label"></nav>
+    <nav class="tiles" id="tiles" aria-labelledby="topics-label">
+      <div class="tile tile-skel" aria-hidden="true"><span class="tile-name"><span class="skel skel-line"></span><span class="skel skel-line short"></span></span><span class="bar-track"></span><span class="tile-meta"><span class="skel skel-inline">&nbsp;</span></span></div>
+      <div class="tile tile-skel" aria-hidden="true"><span class="tile-name"><span class="skel skel-line"></span><span class="skel skel-line short"></span></span><span class="bar-track"></span><span class="tile-meta"><span class="skel skel-inline">&nbsp;</span></span></div>
+      <div class="tile tile-skel" aria-hidden="true"><span class="tile-name"><span class="skel skel-line"></span><span class="skel skel-line short"></span></span><span class="bar-track"></span><span class="tile-meta"><span class="skel skel-inline">&nbsp;</span></span></div>
+      <div class="tile tile-skel" aria-hidden="true"><span class="tile-name"><span class="skel skel-line"></span><span class="skel skel-line short"></span></span><span class="bar-track"></span><span class="tile-meta"><span class="skel skel-inline">&nbsp;</span></span></div>
+      <div class="tile tile-skel" aria-hidden="true"><span class="tile-name"><span class="skel skel-line"></span><span class="skel skel-line short"></span></span><span class="bar-track"></span><span class="tile-meta"><span class="skel skel-inline">&nbsp;</span></span></div>
+    </nav>
 
     <div class="parts" id="parts" role="group" aria-label="IELTS part">
       <button class="part-btn" data-part="0" aria-pressed="true">All</button>
@@ -280,20 +308,32 @@
       <button class="part-btn" data-part="3" aria-pressed="false">Part 3</button>
     </div>
 
-    <main id="main"></main>
+    <main id="main">
+      <p class="sr-only" role="status">Loading questions…</p>
+      <div class="card skel-card" aria-hidden="true">
+        <div class="card-hero">
+          <div class="card-top"><div class="badges"><span class="skel"></span><span class="skel"></span></div></div>
+          <div class="question"><span class="skel"></span><span class="skel" style="width:85%"></span><span class="skel" style="width:50%"></span></div>
+        </div>
+        <div class="card-body">
+          <span class="skel skel-btn"></span>
+          <div class="card-foot"><span class="skel"></span><span class="skel skel-inline">&nbsp;</span><span class="skel"></span></div>
+        </div>
+      </div>
+    </main>
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
 
   <div class="actionbar">
     <div class="actionbar-inner">
-      <button class="btn btn-icon" id="btn-search" aria-label="Find a question" aria-haspopup="dialog">
+      <button class="btn btn-icon" id="btn-search" aria-label="Find a question" aria-haspopup="dialog" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" aria-hidden="true"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       </button>
-      <button class="btn btn-yellow grow" id="btn-hint" aria-controls="steps">
+      <button class="btn btn-yellow grow" id="btn-hint" aria-controls="steps" disabled>
         <span id="hint-label">Hint</span> <kbd>H</kbd>
       </button>
-      <button class="btn btn-dark grow-2" id="btn-random">
+      <button class="btn btn-dark grow-2" id="btn-random" disabled>
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 3h5v5M4 20 21 3M21 16v5h-5M15 15l6 6M4 4l5 5"/></svg>
         Random <kbd>R</kbd>
       </button>
