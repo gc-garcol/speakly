@@ -10,6 +10,8 @@ Speak Up is a mobile-first web app for practising IELTS Speaking (Part 1, 2, 3).
 index.html   markup + all CSS (in <style>)
 index.js     all app logic
 data/*.js    one file per topic
+collocations.html  collocations page: markup + its CSS (same tokens as index.html)
+collocations.js    collocations data (GROUPS) + page logic
 readme.md    user-facing docs
 rule.md      this file
 ```
@@ -19,7 +21,8 @@ rule.md      this file
 - The app must work when you open `index.html` directly (`file://`). Never use ES modules (`import`/`export`, `type="module"`), `fetch()` of local files, or anything else that needs a server.
 - `index.js` is a classic script wrapped in an IIFE with `"use strict"`. It loads data files by injecting `<script>` tags in the order of `DATA_FILES`.
 - No frameworks, no npm packages, no build tools, no CDN scripts. The only external resource allowed is the Google Fonts stylesheet (Plus Jakarta Sans), and the app must still work offline using the font fallback.
-- Keep CSS inside `index.html` and JS inside `index.js`. Don't add new top-level files unless the user asks.
+- Keep CSS inside `index.html` and JS inside `index.js` (the collocations page keeps its own in `collocations.html` / `collocations.js`, same rules: classic IIFE script, works over `file://`). Don't add new top-level files unless the user asks.
+- Collocations: each item in `GROUPS` has `phrase`, `vi` (short Vietnamese meaning) and `example`. The example wraps the collocation, as it appears in the sentence, in `[square brackets]` exactly once; the page highlights it. Group `area` is `everyday` or `software`. The page has an All / Everyday / Software filter, a search box (`/` focuses it) and a back link to `index.html`; `index.html` links to it from the intro.
 - Don't add features the user didn't ask for. In particular, don't re-add:
   - text-to-speech or speaker buttons
   - topic emoji/icons (the `logo-mark` and UI SVG icons stay)

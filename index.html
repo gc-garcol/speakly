@@ -85,6 +85,12 @@
     .intro { padding: 24px 0 14px; }
     .intro h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.15; font-weight: 800; letter-spacing: -.03em; margin: 0; }
     .intro p { margin: 6px 0 0; color: var(--muted); font-size: 1rem; }
+    .intro-link {
+      display: inline-flex; align-items: center; gap: 4px; margin-top: 12px; padding: 6px 10px 6px 12px;
+      border: 2px solid var(--line); border-radius: 999px; color: var(--ink); font-weight: 700; font-size: .9rem; text-decoration: none;
+    }
+    .intro-link:hover { border-color: var(--line-strong); }
+    .intro-link svg { width: 16px; height: 16px; }
     .section-label { font-size: .78rem; font-weight: 800; letter-spacing: .08em; text-transform: uppercase; color: var(--faint); margin: 14px 0 10px; }
 
     /* ---------- Topic tiles ---------- */
@@ -290,6 +296,9 @@
   <div class="app" id="app" aria-busy="true">
     <section class="intro">
       <h1>Practise IELTS Speaking, one question at a time.</h1>
+      <a class="intro-link" href="collocations.html">Useful collocations
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m9 18 6-6-6-6"/></svg>
+      </a>
     </section>
 
     <p class="section-label" id="topics-label">Topics</p>
