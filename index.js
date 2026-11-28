@@ -121,6 +121,7 @@ const els = {
   resultCount: $("#result-count"),
   pill: $("#progress-pill"),
   toast: $("#toast"),
+  micBtn: $("#btn-mic"),
 };
 
 const ICON = {
@@ -291,6 +292,15 @@ function renderQuestion(direction = 1) {
       <div class="card-body">
         ${cues}
 
+        <section class="speech" id="speech" aria-labelledby="speech-title" hidden>
+          <div class="speech-head">
+            <span class="speech-title" id="speech-title"><span class="speech-dot" aria-hidden="true"></span>Your answer</span>
+            <span class="speech-count" id="speech-count"></span>
+            <button class="btn btn-sm" id="speech-clear">Clear</button>
+          </div>
+          <p class="speech-text" id="speech-text" aria-live="polite"></p>
+        </section>
+
         <div class="step${state.hintLevel >= 1 ? " show" : ""}" id="step-ideas" aria-hidden="${state.hintLevel < 1}">
           <div><div class="panel panel-ideas">
             <div class="panel-head"><span class="panel-title"><span class="em" aria-hidden="true">💡</span>Answer with PEEL</span></div>
@@ -319,9 +329,11 @@ function renderQuestion(direction = 1) {
     </article>`;
 
   updateHintButton();
+  renderSpeech();
 }
 
 function show(q, { direction = 1 } = {}) {
+  if (q !== state.current) stopSpeech();
   state.current = q;
   state.hintLevel = 0;
   if (q) history.replaceState(null, "", `#${q.id}`);
@@ -409,6 +421,132 @@ function onTimerButton() {
   }
 }
 
+// ---------- Speaking (live speech-to-text) ----------
+// Uses the browser's Web Speech API. Chrome sends the audio to Google's servers, so it needs internet;
+// the button is hidden where the API doesn't exist (e.g. Firefox).
+const Recognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const SPEECH_LANG = "en-US";
+const speech = { rec: null, on: false, qid: null, interim: "" };
+const transcripts = new Map(); // question id -> final text (kept in memory for this visit)
+
+const wordCount = (s) => (s.trim() ? s.trim().split(/\s+/).length : 0);
+
+function renderSpeech() {
+  const box = $("#speech");
+  const q = state.current;
+  if (!box || !q) return;
+  const live = speech.on && speech.qid === q.id;
+  const text = transcripts.get(q.id) || "";
+  const interim = live ? speech.interim : "";
+  box.hidden = !live && !text;
+  box.classList.toggle("live", live);
+  $("#speech-text").innerHTML =
+    text || interim
+      ? `${escapeHtml(text)}${interim.trim() ? ` <span class="interim">${escapeHtml(interim.trim())}</span>` : ""}`
+      : '<span class="placeholder">Listening… start speaking.</span>';
+  const n = wordCount(text);
+  $("#speech-count").textContent = `${n} word${n === 1 ? "" : "s"}`;
+}
+
+function renderMic() {
+  els.micBtn.setAttribute("aria-pressed", String(speech.on));
+  els.micBtn.setAttribute("aria-label", speech.on ? "Stop speaking" : "Start speaking");
+}
+
+function addFinal(qid, chunk) {
+  const piece = chunk.trim();
+  if (!piece) return;
+  const text = [transcripts.get(qid), piece].filter(Boolean).join(" ");
+  transcripts.set(qid, text);
+  // Lets an AI agent watching the page (e.g. via Chrome DevTools) follow along
+  console.info(`[speakup] ${qid}: ${piece}`);
+}
+
+function createRecognition() {
+  const rec = new Recognition();
+  rec.lang = SPEECH_LANG;
+  rec.continuous = true;
+  rec.interimResults = true;
+  rec.onresult = (e) => {
+    let interim = "";
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const r = e.results[i];
+      if (r.isFinal) addFinal(speech.qid, r[0].transcript);
+      else interim += r[0].transcript;
+    }
+    speech.interim = interim;
+    renderSpeech();
+  };
+  rec.onerror = (e) => {
+    if (e.error === "no-speech" || e.error === "aborted") return; // onend restarts or stops
+    const msgs = {
+      "not-allowed": "Microphone access is blocked",
+      "service-not-allowed": "Speech recognition is blocked",
+      "audio-capture": "No microphone found",
+      network: "Speech-to-text needs internet",
+    };
+    toast(msgs[e.error] || "Speech-to-text stopped");
+    stopSpeech();
+  };
+  // Chrome ends a session after a pause; keep listening until the user taps stop
+  rec.onend = () => {
+    if (!speech.on) return;
+    try {
+      rec.start();
+    } catch {
+      stopSpeech();
+    }
+  };
+  return rec;
+}
+
+function startSpeech() {
+  const q = state.current;
+  if (!Recognition || !q || speech.on) return;
+  speech.rec = speech.rec || createRecognition();
+  Object.assign(speech, { on: true, qid: q.id, interim: "" });
+  try {
+    speech.rec.start();
+  } catch {
+    /* previous session still closing: its onend restarts it because speech.on is true */
+  }
+  renderMic();
+  renderSpeech();
+}
+
+function stopSpeech() {
+  if (!speech.on) return;
+  speech.on = false;
+  // Keep any words still in progress so nothing said is lost
+  if (speech.interim) addFinal(speech.qid, speech.interim);
+  speech.interim = "";
+  speech.rec?.abort(); // abort, not stop: the interim words were just saved, so skip the late final result
+  renderMic();
+  renderSpeech();
+}
+
+const toggleSpeech = () => (speech.on ? stopSpeech() : startSpeech());
+
+function clearSpeech() {
+  const q = state.current;
+  if (!q) return;
+  transcripts.delete(q.id);
+  speech.interim = "";
+  renderSpeech();
+  if (!speech.on) els.micBtn.focus(); // the Clear button disappears with the panel
+}
+
+// Read-only hook for AI agents (e.g. Chrome DevTools MCP): speakup.current() / speakup.all()
+const entry = (id, text) => {
+  const q = BY_ID.get(id);
+  return { id, part: q.part, topic: q.topic.name, question: q.question, transcript: text, words: wordCount(text) };
+};
+window.speakup = Object.freeze({
+  current: () => (state.current ? entry(state.current.id, transcripts.get(state.current.id) || "") : null),
+  all: () => [...transcripts].map(([id, text]) => entry(id, text)),
+  listening: () => speech.on,
+});
+
 // ---------- Search sheet ----------
 function highlight(text, term) {
   const safe = escapeHtml(text);
@@ -472,6 +610,7 @@ els.parts.addEventListener("click", (e) => {
 els.main.addEventListener("click", (e) => {
   if (e.target.closest("#timer-btn")) return onTimerButton();
   if (e.target.closest("#btn-done")) return toggleDone();
+  if (e.target.closest("#speech-clear")) return clearSpeech();
   if (e.target.closest("#btn-prev")) return step(-1);
   if (e.target.closest("#btn-next")) return step(1);
 });
@@ -486,6 +625,7 @@ function step(dir) {
 
 els.hintBtn.addEventListener("click", nextHint);
 els.randomBtn.addEventListener("click", randomTopic);
+els.micBtn.addEventListener("click", toggleSpeech);
 els.searchBtn.addEventListener("click", openSheet);
 els.closeBtn.addEventListener("click", closeSheet);
 els.search.addEventListener("input", renderResults);
@@ -522,6 +662,10 @@ document.addEventListener("keydown", (e) => {
 // Buttons start disabled in index.html while the data loads
 els.randomBtn.disabled = false;
 els.searchBtn.disabled = false;
+if (Recognition) {
+  els.micBtn.hidden = false;
+  els.micBtn.disabled = false;
+}
 $("#app").removeAttribute("aria-busy");
 renderProgress();
 renderTiles();

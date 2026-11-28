@@ -81,7 +81,8 @@
     @keyframes bump { 40% { transform: scale(1.15); } }
 
     /* ---------- Layout ---------- */
-    .app { max-width: 720px; margin: 0 auto; padding: 0 16px calc(var(--bar-h) + 36px + env(safe-area-inset-bottom)); }
+    /* Extra bottom space so the floating mic button never covers the last row of the card */
+    .app { max-width: 720px; margin: 0 auto; padding: 0 16px calc(var(--bar-h) + 92px + env(safe-area-inset-bottom)); }
     .intro { padding: 24px 0 14px; }
     .intro h1 { font-size: clamp(1.6rem, 6vw, 2.2rem); line-height: 1.15; font-weight: 800; letter-spacing: -.03em; margin: 0; }
     .intro p { margin: 6px 0 0; color: var(--muted); font-size: 1rem; }
@@ -200,6 +201,35 @@
     .card-foot svg { width: 22px; height: 22px; }
     .counter { font-weight: 800; font-size: .95rem; color: var(--muted); font-variant-numeric: tabular-nums; }
     .btn-done[aria-pressed="true"] { --face: var(--green); --edge: var(--green-dark); --border: var(--green-dark); color: #fff; }
+
+    /* Live transcript of the learner's spoken answer (Web Speech API) */
+    .speech { margin-top: 16px; border: 2px dashed var(--line-strong); border-radius: 18px; padding: 12px 14px 14px; }
+    .speech.live { border-style: solid; border-color: var(--accent); }
+    .speech-head { display: flex; align-items: center; gap: 8px; margin-bottom: 6px; }
+    .speech-title { flex: 1; min-width: 0; display: flex; align-items: center; gap: 8px; font-weight: 800; font-size: .95rem; }
+    .speech-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--faint); flex: none; }
+    .speech.live .speech-dot { background: #e5484d; animation: blink 1s ease-in-out infinite alternate; }
+    @keyframes blink { to { opacity: .3; } }
+    .speech-count { font-size: .8rem; font-weight: 700; color: var(--faint); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .speech-text { margin: 0; font-size: 1.02rem; line-height: 1.6; overflow-wrap: anywhere; }
+    .speech-text .interim { color: var(--faint); }
+    .speech-text .placeholder { color: var(--muted); font-weight: 500; }
+
+    /* Floating mic button, sits above the bottom bar on the right */
+    .mic-fab {
+      position: fixed; z-index: 25; width: 60px; height: 60px; border-radius: 50%;
+      right: max(16px, calc((100vw - 688px) / 2));
+      bottom: calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
+      --face: var(--ink); --edge: #000; --border: var(--ink); color: #fff; padding: 0;
+    }
+    .mic-fab svg { width: 26px; height: 26px; }
+    .mic-fab[aria-pressed="true"] { --face: #e5484d; --edge: #b4232a; --border: #b4232a; }
+    .mic-fab[aria-pressed="true"]::after {
+      content: ""; position: absolute; inset: -8px; border-radius: 50%; border: 3px solid #e5484d;
+      animation: ripple 1.4s ease-out infinite; pointer-events: none;
+    }
+    @keyframes ripple { from { transform: scale(.85); opacity: .8; } to { transform: scale(1.25); opacity: 0; } }
+    .mic-fab[hidden] { display: none; }
 
     .empty { text-align: center; padding: 44px 20px; }
     .empty .big { font-size: 2.6rem; }
@@ -333,6 +363,11 @@
   </div>
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+  <!-- Shown by index.js only when the browser supports speech recognition -->
+  <button class="btn mic-fab" id="btn-mic" aria-pressed="false" aria-label="Start speaking" hidden disabled>
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+  </button>
 
   <div class="actionbar">
     <div class="actionbar-inner">
