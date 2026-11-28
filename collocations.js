@@ -364,7 +364,28 @@ function format(text, term, brackets = false) {
   return html;
 }
 
-const state = { area: "all" };
+// Practised collocations are saved by phrase (phrases are unique)
+const STORAGE_KEY = "speakup.collocations";
+const PHRASES = new Set(GROUPS.flatMap((g) => g.items.map((it) => it.phrase)));
+const CHECK_ICON =
+  '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="m5 12 5 5L20 7"/></svg>';
+
+function loadDone() {
+  try {
+    return new Set(JSON.parse(localStorage.getItem(STORAGE_KEY) || "[]").filter((p) => PHRASES.has(p)));
+  } catch {
+    return new Set();
+  }
+}
+function saveDone() {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify([...state.done]));
+  } catch {
+    /* storage unavailable (private mode, file:// restrictions): keep in memory only */
+  }
+}
+
+const state = { area: "all", done: loadDone(), total: 0 };
 const els = {
   areas: document.getElementById("areas"),
   search: document.getElementById("search"),
@@ -391,21 +412,50 @@ function render() {
           <span class="area-badge">${AREA_LABEL[g.area]}</span>
         </div>
         <ul class="items">${items
-          .map(
-            (it) => `<li class="item">
-              <p class="phrase">${format(it.phrase, term)}</p>
-              <p class="meaning" lang="vi">${format(it.vi, term)}</p>
+          .map((it) => {
+            const done = state.done.has(it.phrase);
+            return `<li class="item${done ? " is-done" : ""}">
+              <div class="item-head">
+                <div class="item-text">
+                  <p class="phrase">${format(it.phrase, term)}</p>
+                  <p class="meaning" lang="vi">${format(it.vi, term)}</p>
+                </div>
+                <button class="btn btn-icon btn-done" data-phrase="${escapeHtml(it.phrase)}" aria-pressed="${done}"
+                  aria-label="Mark “${escapeHtml(it.phrase)}” as practised">${CHECK_ICON}</button>
+              </div>
               <p class="example">${format(it.example, term, true)}</p>
-            </li>`
-          )
+            </li>`;
+          })
           .join("")}</ul>
       </section>`;
     })
     .join("");
 
   els.list.innerHTML = total ? html : `<p class="empty">No collocations for “${escapeHtml(term)}”</p>`;
-  els.count.textContent = `${total} collocation${total === 1 ? "" : "s"}`;
+  state.total = total;
+  renderCount();
 }
+
+function renderCount() {
+  const n = state.total;
+  els.count.textContent = `${n} collocation${n === 1 ? "" : "s"} · ${state.done.size}/${PHRASES.size} practised`;
+}
+
+function toggleDone(btn) {
+  const phrase = btn.dataset.phrase;
+  const done = !state.done.has(phrase);
+  if (done) state.done.add(phrase);
+  else state.done.delete(phrase);
+  saveDone();
+  btn.setAttribute("aria-pressed", String(done));
+  btn.closest(".item").classList.toggle("is-done", done);
+  renderCount();
+}
+
+els.list.addEventListener("click", (e) => {
+  const btn = e.target.closest(".btn-done");
+  if (btn) toggleDone(btn);
+});
 
 els.areas.addEventListener("click", (e) => {
   const btn = e.target.closest("[data-area]");
